@@ -336,7 +336,7 @@ The bound variables are \"singular\" and \"plural\"."
 
 (defun projectile-rails-add-keywords-for-file-type ()
   "Apply extra font lock keywords specific to models, controllers etc."
-  (loop for (re keywords) in `(("_controller\\.rb$"   ,projectile-rails-controller-keywords)
+  (cl-loop for (re keywords) in `(("_controller\\.rb$"   ,projectile-rails-controller-keywords)
                                ("engines/common/app/models/.+\\.rb$" ,projectile-rails-model-keywords)
                                ("db/migrate/.+\\.rb$" ,projectile-rails-migration-keywords))
         do (when (and (buffer-file-name) (string-match-p re (buffer-file-name)))
@@ -355,8 +355,8 @@ The bound variables are \"singular\" and \"plural\"."
 The DIRS is list of lists consisting of a directory path and regexp to filter files from that directory.
 Returns a hash table with keys being short names and values being relative paths to the files."
   (let ((hash (make-hash-table :test 'equal)))
-    (loop for (dir re) in dirs do
-          (loop for file in (projectile-rails-dir-files (projectile-rails-expand-root dir)) do
+    (cl-loop for (dir re) in dirs do
+          (cl-loop for file in (projectile-rails-dir-files (projectile-rails-expand-root dir)) do
                 (when (string-match re file)
                   (puthash (match-string 1 file) file hash))))
     hash))
@@ -611,7 +611,7 @@ The bound variable is \"filename\"."
   "Return a resource name extracted from the name of the currently visiting file."
   (let* ((file-name (buffer-file-name))
          (name (and file-name
-                    (loop for re in projectile-rails-resource-name-re-list
+                    (cl-loop for re in projectile-rails-resource-name-re-list
                           do (if (string-match re file-name)
                                  (return (match-string 1 file-name)))))))
     (and name
@@ -624,7 +624,7 @@ The bound variable is \"filename\"."
 
 (defun projectile-rails-find-log ()
   (interactive)
-  (let ((logs-dir (loop for dir in '("log/" "spec/dummy/log/" "test/dummy/log/")
+  (let ((logs-dir (cl-loop for dir in '("log/" "spec/dummy/log/" "test/dummy/log/")
                        until (projectile-rails--file-exists-p dir)
                        finally return dir)))
 
@@ -906,7 +906,7 @@ The bound variable is \"filename\"."
   (let ((name
          (projectile-rails-sanitize-name (thing-at-point 'filename))))
     (projectile-rails-ff
-     (loop for dir in dirs
+     (cl-loop for dir in dirs
            for re = (s-lex-format "${dir}${name}\\..+$")
            for files = (projectile-dir-files (projectile-rails-expand-root dir))
            for file = (--first (string-match-p re it) files)
@@ -1069,7 +1069,7 @@ The bound variable is \"filename\"."
           default-directory))))
 
 (defun projectile-rails--goto-template-at-point (dir name format)
-  (loop for processor in '("erb" "haml" "slim")
+  (cl-loop for processor in '("erb" "haml" "slim")
         for template = (s-lex-format "${dir}${name}.${format}.${processor}")
         for partial = (s-lex-format "${dir}_${name}.${format}.${processor}")
         until (or
