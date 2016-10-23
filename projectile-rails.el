@@ -257,9 +257,9 @@
     ("job" (("app/jobs/" "app/jobs/\\(.+\\)_job\\.rb$")))
     ("mailer" (("app/mailers/" "app/mailers/\\(.+\\)\\.rb$")))
     ("migration" (("db/migrate/" "db/migrate/[0-9]+_\\(.+\\)\\.rb$")))
-    ("model" (("app/models/" "app/models/\\(.+\\)\\.rb$")))
-    ("resource" (("app/models/" "app/models/\\(.+\\)\\.rb$")))
-    ("scaffold" (("app/models/" "app/models/\\(.+\\)\\.rb$")))
+    ("model" (("engines/common/app/models/" "engines/common/app/models/\\(.+\\)\\.rb$")))
+    ("resource" (("engines/common/app/models/" "engines/common/app/models/\\(.+\\)\\.rb$")))
+    ("scaffold" (("engines/common/app/models/" "engines/common/app/models/\\(.+\\)\\.rb$")))
     ("task" (("lib/tasks/" "lib/tasks/\\(.+\\)\\.rake$")))))
 
 (defmacro projectile-rails-with-preloader (&rest cases)
@@ -337,7 +337,7 @@ The bound variables are \"singular\" and \"plural\"."
 (defun projectile-rails-add-keywords-for-file-type ()
   "Apply extra font lock keywords specific to models, controllers etc."
   (loop for (re keywords) in `(("_controller\\.rb$"   ,projectile-rails-controller-keywords)
-                               ("app/models/.+\\.rb$" ,projectile-rails-model-keywords)
+                               ("engines/common/app/models/.+\\.rb$" ,projectile-rails-model-keywords)
                                ("db/migrate/.+\\.rb$" ,projectile-rails-migration-keywords))
         do (when (and (buffer-file-name) (string-match-p re (buffer-file-name)))
              (projectile-rails-highlight-keywords
@@ -389,15 +389,17 @@ The bound variable is \"filename\"."
   (interactive)
   (projectile-rails-find-resource
    "model: "
-   '(("app/models/" "/models/\\(.+\\)\\.rb$"))
-   "app/models/${filename}.rb"))
+   '(("engines/common/app/models/" "engines/common/app/models/\\(.+\\)\\.rb$")
+     ("engines/admin/app/models/" "engines/admin/app/models/\\(.+\\)\\.rb$"))
+   "engines/common/app/models/${filename}.rb"))
 
 (defun projectile-rails-find-controller ()
   (interactive)
   (projectile-rails-find-resource
    "controller: "
-   '(("app/controllers/" "/controllers/\\(.+?\\)\\(_controller\\)?\\.rb$"))
-   "app/controllers/${filename}_controller.rb"))
+   '(("engines/common/app/controllers/" "engines/common/app/controllers/\\(.+?\\)\\(_controller\\)?\\.rb$")
+     ("engines/admin/app/controllers" "engines/admin/app/controllers/\\(.+?\\)\\(_controller\\)?\\.rb$"))
+   "engines/common/app/controllers/${filename}_controller.rb"))
 
 (defun projectile-rails-find-serializer ()
   (interactive)
@@ -410,7 +412,8 @@ The bound variable is \"filename\"."
   (interactive)
   (projectile-rails-find-resource
    "view: "
-   `(("app/views/" ,(concat "app/views/\\(.+\\)" projectile-rails-views-re)))
+   '(("engines/common/app/views/" ,(concat "engines/common/app/views/\\(.+\\)" projectile-rails-views-re))
+     ("engines/admin/app/views/" ,(concat "engines/admin/app/views/\\(.+\\)" projectile-rails-views-re)))
    "app/views/${filename}"))
 
 (defun projectile-rails-find-layout ()
@@ -435,7 +438,7 @@ The bound variable is \"filename\"."
   (interactive)
   (projectile-rails-find-resource
    "lib: "
-   '(("lib/" "lib/\\(.+\\)\\.rb$"))
+   '(("engines/common/lib/common/" "engines/common/lib/common/\\(.+\\)\\.rb$"))
    "lib/${filename}.rb"))
 
 (defun projectile-rails-find-spec ()
@@ -526,7 +529,7 @@ The bound variable is \"filename\"."
 
 (defun projectile-rails-find-current-model ()
   (interactive)
-  (projectile-rails-find-current-resource "app/models/"
+  (projectile-rails-find-current-resource "engines/common/app/models/"
                                           "/${singular}\\.rb$"
                                           'projectile-rails-find-model))
 
@@ -590,7 +593,7 @@ The bound variable is \"filename\"."
                                           'projectile-rails-find-migration))
 
 (defcustom projectile-rails-resource-name-re-list
-  `("/app/models/\\(?:.+/\\)?\\(.+\\)\\.rb\\'"
+  `("engines/common/app/models/\\(?:.+/\\)?\\(.+\\)\\.rb\\'"
     "/app/controllers/\\(?:.+/\\)?\\(.+\\)_controller\\.rb\\'"
     "/app/views/\\(?:.+/\\)?\\([^/]+\\)/[^/]+\\'"
     "/app/helpers/\\(?:.+/\\)?\\(.+\\)_helper\\.rb\\'"
@@ -787,12 +790,12 @@ The bound variable is \"filename\"."
             (format
              "require \"${1:rails_helper}\"\n\nRSpec.describe %s do\n  $0\nend"
              (s-join "::" (projectile-rails-classify (match-string 1 name))))))
-          ((string-match "app/models/\\(.+\\)\\.rb$" name)
+          ((string-match "engines/common/app/models/\\(.+\\)\\.rb$" name)
            (projectile-rails--expand-snippet
             (format
              "class %s < ${1:ActiveRecord::Base}\n$2\nend"
              (s-join "::" (projectile-rails-classify (match-string 1 name))))))
-          ((string-match "lib/\\(.+\\)\\.rb$" name)
+          ((string-match "engines/common/lib/common/\\(.+\\)\\.rb$" name)
            (projectile-rails--expand-snippet
             (projectile-rails--snippet-for-module "${1:module} %s\n$2\nend" name)))
           ((string-match "app/\\(?:[^/]+\\)/\\(.+\\)\\.rb$" name)
@@ -1013,7 +1016,7 @@ The bound variable is \"filename\"."
     (-concat
      (--map (concat "app/" it "/") app-dirs)
      (--map (concat "app/" it "/concerns/") app-dirs)
-     '("lib/"))))
+     '("engines/common/lib/common/"))))
 
 (defun projectile-rails--view-p (path)
   (string-prefix-p "app/views/" (s-chop-prefix (projectile-rails-root) path)))
